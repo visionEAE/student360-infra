@@ -16,10 +16,11 @@ COMPOSE := docker compose --env-file .env -f infra/docker-compose.yml
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-hooks: ## Install the commit-msg hook and commit template in every sibling repo
+hooks: ## Activate lefthook (commit convention) and the commit template in every sibling repo
+	@command -v lefthook >/dev/null || { echo "lefthook is required: npm install -g lefthook"; exit 1; }
 	@for r in $(ALL_REPOS); do \
 	  d=$(ROOT)/student360-$$r; test -d $$d/.git || continue; \
-	  git -C $$d config core.hooksPath .githooks; git -C $$d config commit.template .gitmessage; \
+	  (cd $$d && lefthook install >/dev/null && git config commit.template .gitmessage); \
 	  echo "hooks: student360-$$r"; done
 
 env: ## Create .env from .env.example if missing

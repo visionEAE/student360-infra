@@ -25,7 +25,7 @@ they are expected as siblings of this folder:
 
 ```bash
 make clone            # clone the sibling repositories that are missing
-make hooks            # commit-message hook + template in every repo
+make hooks            # lefthook commit-message hook + template in every repo (needs: npm i -g lefthook)
 make env              # .env from .env.example — edit the placeholders
 make keys             # RSA key pair for auth-service (secrets/, git-ignored)
 make up               # PostgreSQL 16 + Adminer (http://localhost:8090)
