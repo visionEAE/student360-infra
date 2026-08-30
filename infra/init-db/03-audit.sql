@@ -25,7 +25,7 @@ CREATE TABLE audit.audit_record (
 CREATE INDEX idx_audit_record_request_id ON audit.audit_record (request_id);
 CREATE INDEX idx_audit_record_subject    ON audit.audit_record (subject_type, subject_id, occurred_at DESC);
 
-GRANT USAGE ON SCHEMA audit TO auth_user, core_user, lms_user, support_user;
-GRANT INSERT, SELECT ON audit.audit_record TO auth_user, core_user, lms_user, support_user;
-GRANT USAGE ON SEQUENCE audit.audit_record_id_seq TO auth_user, core_user, lms_user, support_user;
+GRANT USAGE ON SCHEMA audit TO auth_user, core_user, lms_user, support_user, network_user;
+GRANT INSERT, SELECT ON audit.audit_record TO auth_user, core_user, lms_user, support_user, network_user;
+GRANT USAGE ON SEQUENCE audit.audit_record_id_seq TO auth_user, core_user, lms_user, support_user, network_user;
 -- Deliberately absent: UPDATE, DELETE, TRUNCATE.
