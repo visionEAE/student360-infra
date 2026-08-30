@@ -1,0 +1,9 @@
+# <type>(<optional-scope>): <imperative summary, lowercase, no period, <= 72 chars>
+#
+# Why this change is needed (the diff already shows what changed). Wrap at 72.
+#
+# Refs: #<issue>            (optional)
+# BREAKING CHANGE: <text>   (optional; or use "type(scope)!:")
+#
+# type  : feat | fix | refactor | test | docs | build | ci | chore | perf | style | revert
+# scope : optional, lowercase kebab-case (api, domain, db, security, config, deps, ...)

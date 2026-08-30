@@ -1,0 +1,11 @@
+name: commit-convention
+
+# Delegates to the organisation-wide reusable workflow so every repository applies the
+# same rule. See visionEAE/.github/CONTRIBUTING.md.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  commits:
+    uses: visionEAE/.github/.github/workflows/commit-convention.yml@main
