@@ -8,7 +8,7 @@ ORG := visionEAE
 SERVICES := auth-service gateway core-service lms-service support-service
 JAVA_REPOS := common $(SERVICES)
 ALL_REPOS := infra $(JAVA_REPOS) frontend
-COMPOSE := docker compose --env-file .env -f infra/docker-compose.yml
+COMPOSE := HOST_UID=$(shell id -u) HOST_GID=$(shell id -g) docker compose --env-file .env -f infra/docker-compose.yml
 
 # run-<service> is a pattern rule and must NOT be listed in .PHONY: make skips implicit
 # rules for phony targets.

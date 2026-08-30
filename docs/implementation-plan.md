@@ -14,8 +14,10 @@ Derived from [context.md](context.md). That document fixes *what* and *why*; thi
 | 3 core-service | **done** (2026-08-30) | `mvn verify` 6 tests (self 200/SELF, other student 403/DENIED, staff STAFF_ROLE, 401 without service token) |
 | 4 lms-service | **done** (2026-08-30) | `mvn verify` 10 tests; S-1003 signals 21 d / 0.22 / 2 idle courses vs S-1001 1 d / 1.00 / 0 |
 | 5 support-service | **done** (2026-08-30) | `mvn verify` 11 tests; HIGH alert with 4 fired conditions, inbox by assignment, ASSIGNMENT/DENIED audit, 3 outbox envelopes |
-| 6 frontend | pending | |
-| 7 closure | in progress | `scripts/demo/run.sh` → full thread PASSED live (3 services audited one request id; negative A and B) |
+| 6 frontend | **done** (2026-08-30) | `npm test` 3 (single in-flight refresh), `npm run build` + lint clean; login / 360° view / wellbeing / inbox + detail |
+| 7 closure | **done** (2026-08-30) | `make up-containers` (Dockerfile per service) + `make demo` → full thread PASSED against the containerised stack; `make up-all` for local processes; README assumptions + stage 2 swap list |
+
+Open items still requiring an org decision are in §8 (GitHub Packages read token for service CI, branch protection). The SPA was verified by build + unit tests, not yet clicked through against the live gateway.
 
 Deviations from the plan as first written: the commit convention is enforced by **lefthook** locally, not by a CI workflow (Actions minutes); `common` gained `AuditTrail.recordAs(actor, …)` for the SSO; Phase 1 commits 6–9 were delivered as two commits because `AuthenticationService` is one unit.
 

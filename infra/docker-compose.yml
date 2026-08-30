@@ -60,6 +60,9 @@ services:
       JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
       JWT_KEY_ID: ${JWT_KEY_ID:-student360-dev}
       JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
+    # The dev key stays 0600 on the host: the container runs as the host user (HOST_UID/HOST_GID
+    # are passed by the Makefile) instead of the image's default non-root user.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - ../secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
     ports:
