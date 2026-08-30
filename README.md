@@ -3,8 +3,11 @@
 Documentation, local infrastructure and orchestration for **Student 360° View** — an
 architectural proof of concept for Universidad Icesi, stage 1 (local).
 
+* **[docs/running-locally.md](docs/running-locally.md) — how to run it locally and how it works. Start here.**
 * [docs/context.md](docs/context.md) — what the proof of concept is, assumptions, standards, demonstration thread.
 * [docs/implementation-plan.md](docs/implementation-plan.md) — repositories, order, commits and phase gates.
+* [docs/api-contract-v2.md](docs/api-contract-v2.md) · [docs/network-contract.md](docs/network-contract.md) — the endpoints.
+* [docs/gcp-deployment-feasibility.md](docs/gcp-deployment-feasibility.md) — what moving to GCP would take.
 
 The system is split into one repository per service (each a future Cloud Run deployable);
 they are expected as siblings of this folder:
@@ -18,15 +21,16 @@ they are expected as siblings of this folder:
 ├── student360-core-service/     SIS + ERP simulation     :8082
 ├── student360-lms-service/      LMS simulation           :8083
 ├── student360-support-service/  alerts and interventions :8084
-├── student360-network-service/  support network (Neo4j) :8085
+├── student360-network-service/  support network (Neo4j)  :8085
 └── student360-frontend/         SPA                      :5173
 ```
 
 ## Single command
 
 ```bash
-make up-all           # PostgreSQL + the five services as local processes (needs Java 21, Maven)
+make up-all           # databases + the six services as local processes (needs Java 21, Maven)
 make up-containers    # …or the same stack fully containerised from each repo's Dockerfile
+make seed-network     # load the showcase support networks into Neo4j
 make demo             # the demonstration thread with both negative scenarios
 ```
 
@@ -37,13 +41,13 @@ make clone            # clone the sibling repositories that are missing
 make hooks            # lefthook commit-message hook + template in every repo (needs: npm i -g lefthook)
 make env              # .env from .env.example — edit the placeholders
 make keys             # RSA key pair for auth-service (secrets/, git-ignored)
-make up               # PostgreSQL 16 + Adminer (http://localhost:8090)
+make up               # PostgreSQL 16 + Neo4j 5 + Adminer (http://localhost:8090)
 make check-isolation  # phase gate 0.A: schema isolation and append-only audit trail
 make build-common     # install the shared library into ~/.m2
 make run-auth-service # run a service with the .env loaded
 scripts/demo/phase1-sso.sh      # phase gate 1 against the running SSO
 scripts/demo/phase2-gateway.sh  # phase gate 2 through the gateway (LOG_DIR=… also checks shared traceId)
-make demo             # the full demonstration thread with both negative scenarios (all 5 services running)
+make demo             # the full demonstration thread with both negative scenarios (all 6 services running)
 ```
 
 Conventions for every repository: [visionEAE CONTRIBUTING](https://github.com/visionEAE/.github/blob/main/CONTRIBUTING.md).
