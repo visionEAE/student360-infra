@@ -3,6 +3,11 @@
 # The hook script is a verbatim copy of visionEAE/.github/scripts/check-commit-message.sh.
 min_version: 1.5.0
 
+# Only failures and the one-line summary; the banner adds nothing on every commit.
+output:
+  - summary
+  - failure
+
 commit-msg:
   scripts:
     "check-message.sh":
