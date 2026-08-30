@@ -73,25 +73,42 @@ semesters 3–7, 5 current courses (one with 2.8).
 
 ### `GET /students/{id}/signals` → `EngagementSignals` (unchanged fields + additions)
 ```json
-{"studentId":"S-1003","computedAt":"…","daysSinceLastAccess":18,"lastAccessAt":"…",
- "onTimeSubmissionRate":0.62,"coursesWithoutActivity":2,"activeCourses":5,
- "accessCount30d":6,"lateSubmissions":3,"missingSubmissions":4}
+{"studentId":"S-1003","computedAt":"…","daysSinceLastAccess":3,"lastAccessAt":"…",
+ "onTimeSubmissionRate":0.52,"coursesWithoutActivity":0,"activeCourses":5,
+ "accessCount30d":6,"lateSubmissions":5,"missingSubmissions":7}
 ```
 ### `GET /students/{id}/activity?days=30` → `EngagementActivity`
 ```json
 {"studentId":"S-1003","windowDays":30,"accessCount":6,"lastAccessAt":"…",
- "submissions":{"onTime":8,"late":3,"missing":4},
+ "submissions":{"onTime":13,"late":5,"missing":7},
  "courses":[{"courseCode":"PSI-301","courseName":"…","lastAccessAt":"…","daysSinceLastAccess":3,
             "onTime":4,"late":1,"missing":0,"participation":"ACTIVE"}]}
 ```
-`participation` ∈ `ACTIVE | MODERATE | LOW | INACTIVE` (computed by the LMS: inactive = no access in
-the window; low = >14 days or missing ≥ 2; moderate = >7 days or any late; active otherwise).
+`participation` ∈ `ACTIVE | MODERATE | LOW | INACTIVE` (computed by the LMS): `INACTIVE` when the
+course was never opened, or was opened over 14 days ago with nothing ever handed in on time;
+`LOW` when it has gone quiet for over 14 days (but something was once on time) or two or more
+assignments are missing; `MODERATE` past 7 days; `ACTIVE` otherwise. A single late submission does
+not by itself demote a course still visited within the last week — the design's own example
+(PSI-301: 3 days, 4 on time, 1 late, 0 missing, still "Activa") only holds together under this
+reading; a rule that treats any late submission as disqualifying would contradict it.
+
+**Deviation from the raw design mock**, made explicit rather than silently "fixed": the mockup's
+headline card for S-1003 says "18 días sin ingresar" and "2 de 5 cursos sin actividad", but its
+own per-course table shows all five courses touched within the last 20 days — a real system
+cannot honestly report both a stale headline and a fresh per-course table at once. The
+implementation keeps the mockup's per-course "days since last access" values (3, 18, 5, 20, 12,
+which drive the participation labels below) and computes the headline honestly from them: the
+most recent of the five (3 days) is `daysSinceLastAccess`, and since none of the five is idle
+inside the 30-day window, `coursesWithoutActivity` is 0. `lateSubmissions`/`missingSubmissions`
+(5/7) and the rate (0.52) are likewise the actual sum of the per-course table below, chosen to
+reproduce the design's five participation labels exactly (`ACTIVE`, `LOW`, `ACTIVE`, `INACTIVE`,
+`MODERATE`) rather than to hit the mockup's illustrative "62%".
 
 ### `GET /students/signals?ids=…` → `[EngagementSignals]` (staff only, audit `READ_ENGAGEMENT_SIGNALS_BATCH`)
 
 Seed (`V3__…`): enrollments/activity for `S-1004`, `S-1005`, `S-1006` with patterns matching
-their core profiles; S-1003 with 5 courses: 3 days / 18 days / 5 days / 20 days / 12 days since
-last access, so the per-course table looks like the design.
+their core profiles; S-1003 with 5 courses at 3 / 18 / 5 / 20 / 12 days since last access, so the
+per-course table matches the design (see the deviation note above for the headline numbers).
 
 ---
 
