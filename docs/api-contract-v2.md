@@ -172,3 +172,25 @@ and the role label ("Acompañante académica" / "Estudiante").
 ## gateway — unchanged
 `/api/core/**`, `/api/lms/**` allow STUDENT/ADVISOR/ADMIN (batch endpoints reject students downstream);
 `/api/support/students/**` STUDENT/ADVISOR; `/api/support/advisors/**` ADVISOR/ADMIN.
+
+---
+
+## Minimum requirements mapping (from the brief)
+
+| Requirement | Where it is satisfied |
+|---|---|
+| The student sees in one place personal, academic, financial data and campus activity | Student route **`/me/overview`** renders the "Student Information Display" for the caller (`GET /api/core/students/{ref}`, `/academic-status`, `/financial-status`, `GET /api/lms/students/{ref}/activity`, `/signals`, `GET /api/support/students/{ref}/wellbeing-summary`); same organisms as the advisor's "Ver perfil completo". |
+| The support team consults its students and records **reports, alerts and requests** — new records | `GET /advisors/me/students`, `/students/{id}` (consult); `POST …/alerts/{id}/reports` (report); `POST /advisors/me/students/{id}/alerts` (manual alert); `POST /advisors/me/students/{id}/requests` (request); intervention plans. |
+| Support information persisted for consultation and management | `support` schema: alerts, plans, reports, **`support_request`** with status management (`PATCH …/requests/{id}`). |
+| The ecosystem feeds the data warehouse | Every command appends an outbox event (`WELLBEING_ENTRY_RECORDED`, `ALERT_GENERATED`, `ALERT_STATUS_CHANGED`, `INTERVENTION_PLAN_CREATED`, `INTERVENTION_PLAN_UPDATED`, `SUPPORT_REPORT_ADDED`, `SUPPORT_REQUEST_CREATED`, `SUPPORT_REQUEST_UPDATED`) with the Pub/Sub envelope BigQuery ingests in stage 2. |
+
+### Additional support-service commands / queries
+* `POST /advisors/me/students/{id}/alerts` `{severity: MEDIUM|HIGH, reason}` — **CreateManualAlertCommand** → `201 {alertId}`; `source = "ADVISOR"`, `triggeringSignals.firedConditions = ["ADVISOR_JUDGEMENT"]`, `reason` stored in `triggeringSignals.reason`.
+* `PATCH /advisors/me/alerts/{id}` `{status: ACKNOWLEDGED|CLOSED}` — **UpdateAlertStatusCommand**.
+* `POST /advisors/me/students/{id}/requests` `{type, description, alertId?}` — **CreateSupportRequestCommand** → `201 {requestId}`.
+  `type` ∈ `FINANCIAL_WELLBEING_REFERRAL | PSYCHOLOGICAL_SUPPORT_REFERRAL | TUTORING | WORKLOAD_ADJUSTMENT | PROFESSOR_MEETING | OTHER`.
+* `PATCH /advisors/me/requests/{id}` `{status: IN_PROGRESS|RESOLVED, resolution?}` — **UpdateSupportRequestStatusCommand**.
+* `GET /advisors/me/requests` and `GET /advisors/me/students/{id}/requests` → **SupportRequestsQuery**: `[{id, studentId, type, description, status, alertId, createdBy, createdAt, updatedAt, resolution}]`.
+* `StudentCaseQuery` also returns `requests` (open first) and `reports` for the student.
+
+Schema (`V3__…`, support): `support_request(id, student_reference, alert_id NULL, type, description, status OPEN|IN_PROGRESS|RESOLVED, resolution, created_by, created_at, updated_at)`; `alert.created_by` (advisor reference for manual alerts, null for the rule).
