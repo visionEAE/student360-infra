@@ -27,7 +27,15 @@ thing, but the two are independently correct and independently testable.
   external counsellor with no login).
 * `kind` — `STUDENT | ADVISOR | PROFESSOR | FAMILY | PEER | COUNSELOR | OTHER`.
 * `displayName` — shown in the UI; required for `FAMILY`/`PEER`/`OTHER` since they have no other
-  profile to pull a name from.
+  profile to pull a name from. For an institutional person it is a **cached label** so the graph can
+  be drawn without one directory call per node; opening the person refreshes it (§2.1).
+* `email`, `phone`, `summary` — optional contact details **stored only for people the institution
+  has no record of** (family, a friend outside the university, an external counsellor, an advisor).
+  For a professor or a fellow student they stay null on purpose: core-service's directory is the
+  source of truth for those, resolved at read time (§2.1), so a value typed here months ago can
+  never shadow the SIS. `summary` describes the *person* and is visible to everyone who may read the
+  network; it is not the same thing as an edge's `note`, which is one rater's private remark about
+  the relationship.
 
 ### Relationship: `SUPPORTS`
 ```
@@ -95,6 +103,38 @@ service behind.
 * `GET /api/network/advisors/me/students/{id}/support-network` — same query, advisor path,
   identical read model; also returns any `SUPPORT_TEAM`-tagged edges alongside the student's own.
 
+### 2.1 Opening one person — contact details and a short summary
+
+* `GET /api/network/students/{id}/connections/{personReference}` — **GetConnectionDetailQuery**
+  (and `GET /api/network/advisors/me/students/{id}/connections/{personReference}`, identical read
+  model from the advisor's side)
+  ```json
+  {"studentId":"S-1003",
+   "person":{"reference":"PROF-4","kind":"PROFESSOR","displayName":"Dra. Lucía Fernández"},
+   "contact":{"email":"lucia.fernandez@icesi.edu.co","phone":null,
+              "summary":"Psicopatología, Psicología Clínica","headline":"Psychology",
+              "source":"DIRECTORY"},
+   "edges":[{"weight":7,"relationshipLabel":"PROFESSOR","ratedBy":"SELF","updatedAt":"…"}]}
+  ```
+  **Reachability is decided by the edges, not by the person node**: the person is only returned if
+  they actually support *this* student, so knowing a reference is never enough to read somebody's
+  contact card out of the graph. A reference that names nobody in this student's network → `404`.
+
+  `contact.source` says where the details came from, and the UI shows it as a badge so nobody
+  mistakes a self-entered phone number for an institutional one:
+
+  | `source` | Means | Who |
+  |---|---|---|
+  | `DIRECTORY` | Resolved from core-service's `GET /api/core/directory/{reference}` at read time | professors (`PROF-*`), fellow students (`S-*`) |
+  | `SELF_REPORTED` | Typed in by whoever added the person, stored on the graph node | family, friends, external counsellors, advisors (`A-*`) |
+  | `NONE` | Nothing on file — **including when core-service could not be reached** | anyone |
+
+  The directory wins whenever it answered (name and email), but only for what it actually carries:
+  it publishes no phone number, so a stored one still shows. Enrichment is additive and degrades
+  silently — if core-service is down the card still renders from the graph's own data, marked
+  `NONE` rather than failing the whole read. `co.edu.icesi.student360.network.domain.service
+  .ConnectionDetailAssembler` holds that precedence rule, pure and unit-tested.
+
 ### Picking a `PROFESSOR` or `PEER` — directory-backed, not free text
 
 `person.displayName` is only ever typed by hand for kinds core-service has no record of
@@ -130,6 +170,34 @@ fetched from `network-service` and `core-service` respectively, both added to
 `unavailableSources` on failure like every other section already is. `support-service` gets two
 new port interfaces (`NetworkServiceClient`, extending the existing `CoreServiceClient` for the
 professors call) — no change to its own schema.
+
+## 4.1 Seed — the showcase support networks
+
+The graph has no Flyway equivalent, so unlike every Postgres-backed service — which seeds through
+its own migrations — the support network is seeded from infra:
+
+```
+make seed-network          # scripts/demo/seed-support-network.sh → infra/seed/network-seed.cypher
+```
+
+Idempotent by construction: every write is a `MERGE` on a stable reference, so running it twice
+leaves the same graph. That is also why the personal contacts carry readable seed references
+(`P-seed-maria-madre`) instead of the `P-<uuid>` the API generates at runtime — a generated id could
+not be re-`MERGE`d on a second run.
+
+What the seeded networks are meant to show, read together with the risk profiles core-service seeds:
+
+| Student | Risk | The network says |
+|---|---|---|
+| `S-1003` María Rojas | HIGH | Deliberately **thin**: her real support is her mother (9/10, the primary); her institutional ties are weak, and the team has started building one — a `SUPPORT_TEAM` edge to the professor of the course she is failing, which she has not rated |
+| `S-1001` Ana Torres | LOW | The contrast: broad and balanced — both parents, a friend, a peer, a mentor professor, her advisor |
+| `S-1004` Daniel Herrera | MEDIUM | Final year, financially strained: partner, brother, one mentor |
+| `S-1005` Camila Torres | MEDIUM | Peer-centred, family far away |
+| `S-1008` Santiago Molina | — | Assigned to the **other** advisor (`A-2002`), so both demo logins have a student whose network they may open |
+
+Contact details are seeded only for people core-service has no record of, so the demo exercises all
+three `contact.source` values: `SELF_REPORTED` (family, advisors), `DIRECTORY` (professors, peers)
+and `NONE` (anyone whose details nobody has filled in).
 
 ## 5. Infrastructure
 
