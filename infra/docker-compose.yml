@@ -1,0 +1,42 @@
+# Local infrastructure for Student 360° (stage 1). Services run outside Compose during
+# development; a `services` profile that containerises them is added in Phase 7.
+name: student360
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: student360-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-student360}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Consumed by init-db/02-users.sql through psql variables.
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?set AUTH_DB_PASSWORD in .env}
+      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}
+      LMS_DB_PASSWORD: ${LMS_DB_PASSWORD:?set LMS_DB_PASSWORD in .env}
+      SUPPORT_DB_PASSWORD: ${SUPPORT_DB_PASSWORD:?set SUPPORT_DB_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Scripts run once, in lexical order, when the data volume is empty.
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-student360}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  adminer:
+    image: adminer:4
+    container_name: student360-adminer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "${ADMINER_PORT:-8090}:8080"
+
+volumes:
+  postgres-data:
