@@ -95,6 +95,16 @@ service behind.
 * `GET /api/network/advisors/me/students/{id}/support-network` — same query, advisor path,
   identical read model; also returns any `SUPPORT_TEAM`-tagged edges alongside the student's own.
 
+### Picking a `PROFESSOR` or `PEER` — directory-backed, not free text
+
+`person.displayName` is only ever typed by hand for kinds core-service has no record of
+(`FAMILY`, `COUNSELOR`, `ADVISOR`, `OTHER`). For `PROFESSOR` and `PEER`, the frontend backs the
+picker with core-service's own directory instead: `GET /api/core/directory/search?q=&kind=` (§3
+of `docs/api-contract-v2.md`; `kind` is `STUDENT` for a peer, `PROFESSOR` for a professor). The
+chosen result's `reference` (`S-1001`, `PROF-4`, …) and `displayName` become `person.reference`
+and `person.displayName` on the `UpsertConnectionCommand` above — the resulting `Person` node is
+then traceable back to the real SIS record it came from, not an arbitrary string a rater typed.
+
 ## 3. core-service extension — "current professors" (relational, no rating)
 
 Flyway (new version only): `core.professor(id, full_name, email, department)`,

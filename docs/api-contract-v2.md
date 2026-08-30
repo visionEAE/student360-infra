@@ -67,6 +67,19 @@ S-1003 keeps the design's numbers where sensible: tuition 8 500 000, paid 7 260 
 1 240 000 overdue since 2026-08-15, scholarship 20 %, GPA history 3.6/3.5/3.2/3.5/3.4 for
 semesters 3–7, 5 current courses (one with 2.8).
 
+### `GET /directory/search?q=&kind=` → `[DirectoryEntry]` (any authenticated role)
+```json
+[{"reference":"S-1001","kind":"STUDENT","displayName":"Ana Torres"},
+ {"reference":"PROF-4","kind":"PROFESSOR","displayName":"Dra. Lucía Fernández"}]
+```
+`q` — free text, matched case-insensitively against first/last name (`STUDENT`) or full name
+(`PROFESSOR`); below 2 characters returns `[]` without querying. `kind` — `STUDENT` or
+`PROFESSOR`; omitted searches both. Top 10 hits per kind, no pagination. Only identity fields are
+returned — never grades, balances or contact details. Backs the support-network picker
+(`docs/network-contract.md` §2): a professor or peer added to a student's support network must be
+a real SIS record, not a freely typed name, so `reference` is what `network-service` stores on
+the `Person` node.
+
 ---
 
 ## lms-service (`/api/lms`) — learning platform, read-only queries
