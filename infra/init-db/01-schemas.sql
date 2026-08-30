@@ -5,6 +5,7 @@ CREATE SCHEMA auth;
 CREATE SCHEMA core;
 CREATE SCHEMA lms;
 CREATE SCHEMA support;
+CREATE SCHEMA network;
 CREATE SCHEMA audit;
 
 -- Nobody but the owner gets anything on public by default; each service is confined below.
