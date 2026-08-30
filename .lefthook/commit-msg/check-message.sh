@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Canonical commit-message check for every repository in the visionEAE organisation.
-# Copied verbatim into <repo>/.githooks/commit-msg by bootstrap-repo.sh, and mirrored by the
-# reusable workflow .github/workflows/commit-convention.yml. Change the rule here first.
+# Copied verbatim into <repo>/.lefthook/commit-msg/check-message.sh by bootstrap-repo.sh and run
+# by lefthook on every commit. Change the rule here first, then re-seed the repositories.
 #
 # Usage: check-commit-message.sh <file-with-message>
 #        printf '%s' "$message" | check-commit-message.sh -
