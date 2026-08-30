@@ -12,7 +12,8 @@ COMPOSE := docker compose --env-file .env -f infra/docker-compose.yml
 
 # run-<service> is a pattern rule and must NOT be listed in .PHONY: make skips implicit
 # rules for phony targets.
-.PHONY: help hooks env keys up down reset logs psql check-isolation clone build-common build-all verify-all demo test
+.PHONY: help hooks env keys up down reset logs psql check-isolation clone build-common build-all verify-all demo test \
+        up-all down-all logs-all up-containers down-containers
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'

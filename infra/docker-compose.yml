@@ -1,6 +1,15 @@
-# Local infrastructure for Student 360° (stage 1). Services run outside Compose during
-# development; a `services` profile that containerises them is added in Phase 7.
+# Local infrastructure for Student 360° (stage 1).
+#   docker compose up                         → PostgreSQL + Adminer (services run with make run-<service>)
+#   docker compose --profile services up      → the same plus the five services as containers, built from
+#                                               the sibling repositories' Dockerfiles (make up-containers)
 name: student360
+
+x-service-defaults: &service-defaults
+  profiles: [services]
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
 
 services:
   postgres:
@@ -37,6 +46,81 @@ services:
       ADMINER_DEFAULT_SERVER: postgres
     ports:
       - "${ADMINER_PORT:-8090}:8080"
+
+  auth-service:
+    <<: *service-defaults
+    build: ../../student360-auth-service
+    container_name: student360-auth-service
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-student360}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET}
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
+      JWT_KEY_ID: ${JWT_KEY_ID:-student360-dev}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
+    volumes:
+      - ../secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
+    ports:
+      - "8081:8081"
+
+  core-service:
+    <<: *service-defaults
+    build: ../../student360-core-service
+    container_name: student360-core-service
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-student360}
+      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD}
+      SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET}
+    ports:
+      - "8082:8082"
+
+  lms-service:
+    <<: *service-defaults
+    build: ../../student360-lms-service
+    container_name: student360-lms-service
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-student360}
+      LMS_DB_PASSWORD: ${LMS_DB_PASSWORD}
+      SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET}
+    ports:
+      - "8083:8083"
+
+  support-service:
+    <<: *service-defaults
+    build: ../../student360-support-service
+    container_name: student360-support-service
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-student360}
+      SUPPORT_DB_PASSWORD: ${SUPPORT_DB_PASSWORD}
+      SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET}
+      PSEUDONYM_SECRET: ${PSEUDONYM_SECRET}
+      CORE_SERVICE_URL: http://core-service:8082
+      LMS_SERVICE_URL: http://lms-service:8083
+    ports:
+      - "8084:8084"
+
+  gateway:
+    <<: *service-defaults
+    build: ../../student360-gateway
+    container_name: student360-gateway
+    environment:
+      SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      CORE_SERVICE_URL: http://core-service:8082
+      LMS_SERVICE_URL: http://lms-service:8083
+      SUPPORT_SERVICE_URL: http://support-service:8084
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres-data:

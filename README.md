@@ -21,6 +21,14 @@ they are expected as siblings of this folder:
 └── student360-frontend/         SPA                      :5173
 ```
 
+## Single command
+
+```bash
+make up-all           # PostgreSQL + the five services as local processes (needs Java 21, Maven)
+make up-containers    # …or the same stack fully containerised from each repo's Dockerfile
+make demo             # the demonstration thread with both negative scenarios
+```
+
 ## Quick start
 
 ```bash
@@ -38,3 +46,32 @@ make demo             # the full demonstration thread with both negative scenari
 ```
 
 Conventions for every repository: [visionEAE CONTRIBUTING](https://github.com/visionEAE/.github/blob/main/CONTRIBUTING.md).
+
+## Declared assumptions (stage 1)
+
+Deliberate scope simplifications, not production recommendations — see `docs/context.md` §5.
+
+1. **One PostgreSQL instance, one schema per service**, one database role per service confined to its schema; the audit table is append-only by grant (`make check-isolation` proves both).
+2. **SIS, ERP and LMS are simulated** by `core-service` and `lms-service`, exposing the contract the real systems would expose through the institutional integration platform.
+3. **The integration platform is not built**; it is a box in the diagram (protocol translation, throttling, single diagnostic boundary, audited egress).
+4. **Custom SSO** with the same contract as the institutional IdP (JWKS, role claims); replacing it is one gateway property.
+5. **Service-to-service auth is simulated**: an HS256 JWT with the same claim structure as a Google ID token, behind `ServiceTokenProvider`/`ServiceTokenValidator`.
+6. **Domain events are persisted, not published**: `support.outbox_event` holds the exact Pub/Sub envelope.
+7. **Seed data, not migration.**
+
+## What changes in stage 2 (and what does not)
+
+Every cloud-bound concern is a port with a local adapter; moving to Cloud Run swaps adapters and configuration, never domain code.
+
+| Port / concern | Stage 1 adapter | Stage 2 adapter | Where |
+|---|---|---|---|
+| `EventPublisher` | `OutboxEventPublisher` | Pub/Sub relay draining `outbox_event` | common → support |
+| `ServiceTokenProvider` / `ServiceTokenValidator` | `Local*` (shared HS256 secret) | Google-signed ID token, audience = Cloud Run URL | common |
+| `SigningKeyProvider` | `PemSigningKeyProvider` (file path) | Secret Manager | auth-service |
+| JWKS location | `AUTH_SERVICE_URL/.well-known/jwks.json` | institutional IdP JWKS | gateway (one property) |
+| `LoginAttemptLimiter` | in-memory | shared store | auth-service |
+| Logging sink | `stdout` JSON | Cloud Logging — **no code change** | all |
+| Tracing exporter | none (W3C propagation already on) | Cloud Trace | all |
+| `outbox_event` consumer | none | BigQuery via Pub/Sub native subscription | — |
+| Database | Docker PostgreSQL | Cloud SQL through the Auth Proxy (JDBC URL only) | all |
+| Runtime | `make up-all` / compose | Cloud Run, one service per repository (`Dockerfile` in each) | all |

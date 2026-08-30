@@ -10,3 +10,6 @@ secrets/
 .DS_Store
 Thumbs.db
 *.log
+
+# Logs and pids of `make up-all`
+logs/
