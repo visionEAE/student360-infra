@@ -71,4 +71,5 @@ verify-all: ## Run `mvn verify` in every Java repository that has a build
 # per-repo copies of secrets.
 run-%: env
 	@set -a && source .env && set +a && \
+	  export JWT_PRIVATE_KEY_PATH=$(abspath secrets/jwt-private.pem) && \
 	  mvn -q -f $(ROOT)/student360-$*/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev
