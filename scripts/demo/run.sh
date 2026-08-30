@@ -13,7 +13,7 @@ G="${GATEWAY_URL:-http://localhost:8080}"
 PSQL=(psql -h localhost -p "${POSTGRES_PORT:-5432}" -U postgres -d "${POSTGRES_DB:-student360}")
 export PGPASSWORD="$POSTGRES_PASSWORD"
 failed=0; pass() { echo "  ✔ $1"; }; fail() { echo "  ✖ $1"; failed=1; }
-login() { curl -s -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"student360\"}" "$G/api/auth/login"; }
+login() { curl -s -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"${DEMO_PASSWORD:-student360}\"}" "$G/api/auth/login"; }
 code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 stamp="$(date +%H%M%S)"
 

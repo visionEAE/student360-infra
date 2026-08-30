@@ -11,7 +11,7 @@ cd "$(dirname "$0")/../.."
 G="${GATEWAY_URL:-http://localhost:8080}"
 failed=0; pass() { echo "✔ $1"; }; fail() { echo "✖ $1"; failed=1; }
 
-login() { curl -s -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"student360\"}" "$G/api/auth/login" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("accessToken",""))'; }
+login() { curl -s -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"${DEMO_PASSWORD:-student360}\"}" "$G/api/auth/login" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("accessToken",""))'; }
 
 # entry <email> <econ mood> <acad mood> <emo mood>
 entry() {
