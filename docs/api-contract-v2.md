@@ -67,6 +67,21 @@ S-1003 keeps the design's numbers where sensible: tuition 8 500 000, paid 7 260 
 1 240 000 overdue since 2026-08-15, scholarship 20 %, GPA history 3.6/3.5/3.2/3.5/3.4 for
 semesters 3–7, 5 current courses (one with 2.8).
 
+### `GET /directory/{reference}` → `DirectoryProfile` (any authenticated role)
+```json
+{"reference":"PROF-4","kind":"PROFESSOR","displayName":"Dra. Lucía Fernández",
+ "email":"lucia.fernandez@icesi.edu.co","headline":"Psychology",
+ "detail":"Psicopatología, Psicología Clínica"}
+```
+`reference` is a student id (`S-1001`) or a professor one (`PROF-4`); anything that names nobody —
+including a malformed `PROF-xy` — is a `404`, never a 500. The two display lines are deliberately
+kind-agnostic so one card renders both: `headline` is the program or the department, `detail` the
+current semester or the courses taught this term (newest term only). Only what a university
+directory already publishes; never grades, balances or support-case data. Audited as
+`READ_DIRECTORY_PROFILE` on subject type `DIRECTORY_ENTRY` — looking up how to reach someone is
+exactly the kind of read the trail should answer for afterwards. Consumed by network-service to
+resolve a support-network person's contact card (`docs/network-contract.md` §2.1).
+
 ### `GET /directory/search?q=&kind=` → `[DirectoryEntry]` (any authenticated role)
 ```json
 [{"reference":"S-1001","kind":"STUDENT","displayName":"Ana Torres"},
