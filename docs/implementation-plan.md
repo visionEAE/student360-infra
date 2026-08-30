@@ -11,11 +11,11 @@ Derived from [context.md](context.md). That document fixes *what* and *why*; thi
 | 0.B common | **done** (2026-08-30) | `mvn verify` 17 tests; `FoundationsIntegrationTest` |
 | 1 auth-service | **done** (2026-08-30) | `mvn verify` 10 tests; `scripts/demo/phase1-sso.sh` → PASSED |
 | 2 gateway | **done** (2026-08-30) | `mvn verify` 6 tests; `scripts/demo/phase2-gateway.sh` → PASSED; gateway + SSO log lines share `traceId` |
-| 3 core-service | pending | |
-| 4 lms-service | pending | |
-| 5 support-service | pending | |
+| 3 core-service | **done** (2026-08-30) | `mvn verify` 6 tests (self 200/SELF, other student 403/DENIED, staff STAFF_ROLE, 401 without service token) |
+| 4 lms-service | **done** (2026-08-30) | `mvn verify` 10 tests; S-1003 signals 21 d / 0.22 / 2 idle courses vs S-1001 1 d / 1.00 / 0 |
+| 5 support-service | **done** (2026-08-30) | `mvn verify` 11 tests; HIGH alert with 4 fired conditions, inbox by assignment, ASSIGNMENT/DENIED audit, 3 outbox envelopes |
 | 6 frontend | pending | |
-| 7 closure | pending | |
+| 7 closure | in progress | `scripts/demo/run.sh` → full thread PASSED live (3 services audited one request id; negative A and B) |
 
 Deviations from the plan as first written: the commit convention is enforced by **lefthook** locally, not by a CI workflow (Actions minutes); `common` gained `AuditTrail.recordAs(actor, …)` for the SSO; Phase 1 commits 6–9 were delivered as two commits because `AuthenticationService` is one unit.
 
