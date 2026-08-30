@@ -68,6 +68,35 @@ verify-all: ## Run `mvn verify` in every Java repository that has a build
 	@for r in $(JAVA_REPOS); do \
 	  test -f $(ROOT)/student360-$$r/pom.xml && (echo "== student360-$$r ==" && mvn -q -f $(ROOT)/student360-$$r/pom.xml verify) || true; done
 
+LOG_DIR := $(CURDIR)/logs
+
+demo: env ## Run the full demonstration thread against the running services (needs jq, psql)
+	@scripts/demo/run.sh
+
+test: verify-all ## Alias: run every Java repository's verify (unit + Testcontainers tests)
+
+up-all: up keys build-all ## Start PostgreSQL and the five services as background processes (logs/ folder)
+	@mkdir -p $(LOG_DIR)
+	@for s in auth-service core-service lms-service support-service gateway; do \
+	  (nohup $(MAKE) -s run-$$s > $(LOG_DIR)/$$s.log 2>&1 & echo $$! > $(LOG_DIR)/$$s.pid); done
+	@echo "Waiting for health…"; for i in $$(seq 1 90); do ok=0; for p in 8080 8081 8082 8083 8084; do \
+	  curl -s -o /dev/null -w '%{http_code}' http://localhost:$$p/actuator/health 2>/dev/null | grep -q 200 && ok=$$((ok+1)); done; \
+	  [ $$ok = 5 ] && { echo "All five services are up (logs in logs/)."; exit 0; }; sleep 2; done; echo "Timed out; see logs/"; exit 1
+
+down-all: ## Stop the services started by up-all (by port, so nothing else is touched)
+	@for p in 8080 8081 8082 8083 8084; do pid=$$(ss -ltnp 2>/dev/null | grep ":$$p " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2); \
+	  [ -n "$$pid" ] && kill $$pid && echo "stopped :$$p" || true; done
+
+logs-all: ## Tail the JSON logs of all services started by up-all
+	@tail -f $(LOG_DIR)/*.log
+
+up-containers: env keys build-all ## Build the five service images from the sibling repos and start everything in Compose
+	$(COMPOSE) --profile services up -d --build --wait
+	@echo "Gateway on http://localhost:8080 · Adminer on http://localhost:$${ADMINER_PORT:-8090}"
+
+down-containers: ## Stop the containerised stack (keeps the data volume)
+	$(COMPOSE) --profile services down
+
 # `make run-auth-service` etc. Loads .env so each service gets its credentials without any
 # per-repo copies of secrets.
 run-%: env
