@@ -3,6 +3,19 @@
 Derived from [context.md](context.md). That document fixes *what* and *why*; this one fixes
 *in which repository, in which order, in which commits, and how each step is proven*.
 
+## Contract v2 (design-driven, 2026-08-30)
+
+Derived from `pen_design/vision360.pen` and the brief's minimum requirements; full spec in
+`docs/api-contract-v2.md`. Status per repo:
+
+| Repo | State |
+|---|---|
+| core-service | **done** — CQRS query handlers, gpa history/current courses/payments, staff-only `/students/summaries` batch |
+| lms-service | in progress — CQRS, per-course participation, staff-only `/students/signals` batch |
+| support-service | **done** — CQRS commands/queries, three-dimension wellbeing entries with drafts, advisor-raised alerts, intervention plans without an alert, support requests, advisor students overview, full student case with per-section degradation |
+| frontend | **done** — atomic design system from the .pen tokens, all screens/routes, tested against the contract with mocks |
+| gateway | unchanged — new paths fall under the existing `/api/core/**`, `/api/lms/**`, `/api/support/**` role rules |
+
 ## Status
 
 | Phase | State | Evidence |
