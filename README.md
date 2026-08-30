@@ -18,6 +18,7 @@ they are expected as siblings of this folder:
 ├── student360-core-service/     SIS + ERP simulation     :8082
 ├── student360-lms-service/      LMS simulation           :8083
 ├── student360-support-service/  alerts and interventions :8084
+├── student360-network-service/  support network (Neo4j) :8085
 └── student360-frontend/         SPA                      :5173
 ```
 

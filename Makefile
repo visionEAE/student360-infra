@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 ROOT := $(abspath ..)
 ORG := visionEAE
-SERVICES := auth-service gateway core-service lms-service support-service
+SERVICES := auth-service gateway core-service lms-service support-service network-service
 JAVA_REPOS := common $(SERVICES)
 ALL_REPOS := infra $(JAVA_REPOS) frontend
 COMPOSE := HOST_UID=$(shell id -u) HOST_GID=$(shell id -g) docker compose --env-file .env -f infra/docker-compose.yml
@@ -77,14 +77,14 @@ test: verify-all ## Alias: run every Java repository's verify (unit + Testcontai
 
 up-all: up keys build-all ## Start PostgreSQL and the five services as background processes (logs/ folder)
 	@mkdir -p $(LOG_DIR)
-	@for s in auth-service core-service lms-service support-service gateway; do \
+	@for s in auth-service core-service lms-service support-service network-service gateway; do \
 	  (nohup $(MAKE) -s run-$$s > $(LOG_DIR)/$$s.log 2>&1 & echo $$! > $(LOG_DIR)/$$s.pid); done
-	@echo "Waiting for health…"; for i in $$(seq 1 90); do ok=0; for p in 8080 8081 8082 8083 8084; do \
+	@echo "Waiting for health…"; for i in $$(seq 1 90); do ok=0; for p in 8080 8081 8082 8083 8084 8085; do \
 	  curl -s -o /dev/null -w '%{http_code}' http://localhost:$$p/actuator/health 2>/dev/null | grep -q 200 && ok=$$((ok+1)); done; \
 	  [ $$ok = 5 ] && { echo "All five services are up (logs in logs/)."; exit 0; }; sleep 2; done; echo "Timed out; see logs/"; exit 1
 
 down-all: ## Stop the services started by up-all (by port, so nothing else is touched)
-	@for p in 8080 8081 8082 8083 8084; do pid=$$(ss -ltnp 2>/dev/null | grep ":$$p " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2); \
+	@for p in 8080 8081 8082 8083 8084 8085; do pid=$$(ss -ltnp 2>/dev/null | grep ":$$p " | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2); \
 	  [ -n "$$pid" ] && kill $$pid && echo "stopped :$$p" || true; done
 
 logs-all: ## Tail the JSON logs of all services started by up-all
