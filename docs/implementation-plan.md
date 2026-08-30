@@ -3,6 +3,22 @@
 Derived from [context.md](context.md). That document fixes *what* and *why*; this one fixes
 *in which repository, in which order, in which commits, and how each step is proven*.
 
+## Status
+
+| Phase | State | Evidence |
+|---|---|---|
+| 0.A infra | **done** (2026-08-30) | `make check-isolation` → PASSED |
+| 0.B common | **done** (2026-08-30) | `mvn verify` 17 tests; `FoundationsIntegrationTest` |
+| 1 auth-service | **done** (2026-08-30) | `mvn verify` 10 tests; `scripts/demo/phase1-sso.sh` → PASSED |
+| 2 gateway | pending | |
+| 3 core-service | pending | |
+| 4 lms-service | pending | |
+| 5 support-service | pending | |
+| 6 frontend | pending | |
+| 7 closure | pending | |
+
+Deviations from the plan as first written: the commit convention is enforced by **lefthook** locally, not by a CI workflow (Actions minutes); `common` gained `AuditTrail.recordAs(actor, …)` for the SSO; Phase 1 commits 6–9 were delivered as two commits because `AuthenticationService` is one unit.
+
 ## 0. Repository map
 
 Every service is its own repository because each becomes an independent Cloud Run deployable in
