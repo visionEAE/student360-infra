@@ -10,7 +10,7 @@ Derived from [context.md](context.md). That document fixes *what* and *why*; thi
 | 0.A infra | **done** (2026-08-30) | `make check-isolation` → PASSED |
 | 0.B common | **done** (2026-08-30) | `mvn verify` 17 tests; `FoundationsIntegrationTest` |
 | 1 auth-service | **done** (2026-08-30) | `mvn verify` 10 tests; `scripts/demo/phase1-sso.sh` → PASSED |
-| 2 gateway | pending | |
+| 2 gateway | **done** (2026-08-30) | `mvn verify` 6 tests; `scripts/demo/phase2-gateway.sh` → PASSED; gateway + SSO log lines share `traceId` |
 | 3 core-service | pending | |
 | 4 lms-service | pending | |
 | 5 support-service | pending | |

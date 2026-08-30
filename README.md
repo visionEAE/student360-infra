@@ -32,7 +32,8 @@ make up               # PostgreSQL 16 + Adminer (http://localhost:8090)
 make check-isolation  # phase gate 0.A: schema isolation and append-only audit trail
 make build-common     # install the shared library into ~/.m2
 make run-auth-service # run a service with the .env loaded
-scripts/demo/phase1-sso.sh   # phase gate 1 against the running SSO
+scripts/demo/phase1-sso.sh      # phase gate 1 against the running SSO
+scripts/demo/phase2-gateway.sh  # phase gate 2 through the gateway (LOG_DIR=… also checks shared traceId)
 ```
 
 Conventions for every repository: [visionEAE CONTRIBUTING](https://github.com/visionEAE/.github/blob/main/CONTRIBUTING.md).
