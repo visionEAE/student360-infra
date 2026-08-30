@@ -32,7 +32,12 @@ c="$(code -H "Authorization: Bearer $stok" "$G/api/support/advisors/me/alerts")"
 
 echo "── 5–6. low wellbeing entry → rule evaluates core + lms signals synchronously"
 rid="demo-$stamp-entry"
-entry="$(curl -s -H "Authorization: Bearer $stok" -H "X-Request-Id: $rid" -H 'Content-Type: application/json' -d '{"level":1,"comment":"I feel overwhelmed and I am behind on payments"}' "$G/api/support/students/S-1003/wellbeing-entries")"
+entry_body='{"status":"SENT","dimensions":[
+  {"dimension":"ECONOMIC","mood":"DIFFICULT","needs":["PAYMENT_PLAN"],"note":"I am behind on payments"},
+  {"dimension":"ACADEMIC","mood":"DIFFICULT","needs":["TUTORING"]},
+  {"dimension":"EMOTIONAL","mood":"DIFFICULT","needs":["TALK_TO_SOMEONE"],"note":"I feel overwhelmed"}
+]}'
+entry="$(curl -s -H "Authorization: Bearer $stok" -H "X-Request-Id: $rid" -H 'Content-Type: application/json' -d "$entry_body" "$G/api/support/students/S-1003/wellbeing-entries")"
 alert="$(jq -r '.alertId // empty' <<<"$entry")"
 [ -n "$alert" ] && pass "entry recorded, alert $alert generated (request id $rid)" || { fail "entry: $entry"; }
 "${PSQL[@]}" -tAc "SELECT severity || ' · fired=' || (triggering_signals->'firedConditions')::text FROM support.alert WHERE id = '$alert'" 2>/dev/null | sed 's/^/     alert: /'
