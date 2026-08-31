@@ -4,8 +4,8 @@ Documentation, local infrastructure and orchestration for **Student 360° View**
 architectural proof of concept for Universidad Icesi, stage 1 (local).
 
 * **[docs/running-locally.md](docs/running-locally.md) — how to run it locally and how it works. Start here.**
-* [docs/prueba-tecnica.md](docs/prueba-tecnica.md) — documento de diseño y decisiones (ES): proceso creativo, arquitectura, seguridad y respuestas a la prueba.
-* [docs/stage2-deployment.md](docs/stage2-deployment.md) — stage 2: the GCP deployment, keyless CI/CD and the DWH feed.
+* [visionEAE/.github: prueba-tecnica.md](https://github.com/visionEAE/.github/blob/main/docs/prueba-tecnica.md) — documento de diseño y decisiones (ES): proceso creativo, arquitectura, seguridad y respuestas a la prueba.
+* [visionEAE/.github: stage2-deployment.md](https://github.com/visionEAE/.github/blob/main/docs/stage2-deployment.md) — stage 2: the GCP deployment, keyless CI/CD and the DWH feed.
 * [docs/context.md](docs/context.md) — what the proof of concept is, assumptions, standards, demonstration thread.
 * [docs/implementation-plan.md](docs/implementation-plan.md) — repositories, order, commits and phase gates.
 * [docs/api-contract-v2.md](docs/api-contract-v2.md) · [docs/network-contract.md](docs/network-contract.md) — the endpoints.
