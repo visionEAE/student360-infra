@@ -86,9 +86,29 @@ tres dimensiones, *opt-in* y transparente) y la red de apoyo (grafo ponderado en
 
 ## 3. Arquitectura: función de cada repositorio
 
+El diseño de arquitectura se hizo en dos instancias. En la **primera**, antes de dibujar nada, se
+fijó el entendimiento real de los servicios puestos a disposición por el enunciado y el conjunto
+de premisas que se toman como verdaderas para que el sistema tenga sentido completo — están
+declaradas explícitamente en el §4, precisamente para que sean auditables y no queden implícitas
+en el código. En la **segunda**, con esas premisas fijas, se dibujó el diagrama de arquitectura
+cloud (§3.1) que simula esos servicios y documenta las decisiones técnicas tomadas para el
+desempeño de la prueba con el menor acople posible hacia un sistema de producción real — cada
+pieza que en la prueba es una simulación (SIS, ERP, LMS) queda detrás de un contrato explícito,
+de modo que reemplazarla en un sistema real es configuración de un adaptador, no un rediseño.
+
 Un repositorio por unidad desplegable — cada servicio es un Cloud Run independiente, y esa es la
 razón de la separación (escalamiento y ciclo de vida granulares, no monolito distribuido por
-moda).
+moda). El caso más claro de esa granularidad es `support-service` y `network-service`: el SIS, el
+ERP y el LMS simulan sistemas cuyos equivalentes reales sirven a toda la universidad y necesitan
+escalar con la matrícula y el calendario académico, en buena medida independientemente de cuántas
+entradas de bienestar o ediciones de red de apoyo ocurran en un momento dado. Aislar lo nuevo y de
+menor tráfico (bienestar, alertas, el grafo) en sus propios servicios permite darle a cada uno
+exactamente el perfil de escalamiento que su propia carga justifica, en vez de que todo herede el
+techo — o el costo — del más exigente. Es también, no accidentalmente, la separación que apunta
+hacia una infraestructura 100% cloud: ninguno de estos dos servicios existe en la plataforma
+on-premise que se simula (SIS/ERP/LMS), así que nacer como servicios propios, separados del core,
+es coherente con que son responsabilidades nuevas de la institución, no una función que un sistema
+heredado ya resolvía.
 
 ### Servicios de dominio
 
@@ -103,6 +123,17 @@ moda).
 | [`student360-frontend`](https://github.com/visionEAE/student360-frontend) | 5173/8080 | SPA (React + Vite, atomic design) servida por nginx en Cloud Run. Dos experiencias: la vista 360° del estudiante y el panel del equipo de acompañamiento. |
 | [`student360-dwh-relay`](https://github.com/visionEAE/student360-dwh-relay) | job | Alimenta el data warehouse: drena las tablas *outbox* hacia Pub/Sub (ver §5). |
 
+Sobre el gateway: mantener un componente Spring Cloud propio encima de Cloud Run puede leerse como
+antipatrón — la plataforma ya resuelve descubrimiento, balanceo y escalado, y de hecho el resto
+del sistema evita duplicar exactamente eso (sin Eureka, sin Config Server, sin balanceo propio).
+Lo que el gateway conserva no es topología de red sino **política de aplicación** — reescritura de
+identidad y degradación observable por sección — que ningún borde gestionado da gratis, y que tuvo
+que existir desde el desarrollo local (no hay borde gestionado en Docker Compose), por lo que la
+etapa 2 no exigió arquitectura nueva ahí, solo adaptadores nuevos detrás de los mismos puertos. El
+argumento completo, con la alternativa considerada (Google API Gateway) y el trade-off explícito
+frente a la paridad local/nube, está en el
+[OVERVIEW de la organización, §3](https://github.com/visionEAE/.github/blob/main/docs/OVERVIEW.md#3-the-gateway-is-self-managed-on-purpose--and-it-is-not-the-antipattern-it-looks-like).
+
 ### Fundaciones e infraestructura
 
 | Repositorio | Función |
@@ -113,7 +144,7 @@ moda).
 | [`terraform-core`](https://github.com/visionEAE/terraform-core) | La mitad **desechable**: los 7 servicios Cloud Run + el job relay, Cloud SQL (IP privada), networking, el feed del DWH y el bastión. Destruible y reconstruible desde cero contra los outputs del backend. |
 | [`workflows`](https://github.com/visionEAE/workflows) | CI/CD genérico reutilizable: verificación, build con *gate por hash de contenido* y despliegue por *digest* (§5.3). Cada repo solo lleva dos *callers* delgados. |
 
-### Diagrama de arquitectura (GCP)
+### 3.1 Diagrama de arquitectura (GCP)
 
 ```mermaid
 flowchart TB
@@ -165,6 +196,34 @@ flowchart TB
     end
     GH --> AR
     GH -.->|"gcloud run update @digest"| publico & privado
+```
+
+### 3.2 Diagrama de datos
+
+Una sola instancia de PostgreSQL, **un schema por servicio**, y un rol de base de datos confinado
+a su propio schema — el aislamiento no es convención, lo hace cumplir el motor. `audit` es el
+único schema que ningún servicio posee: todos escriben en él por `INSERT`, nadie puede `UPDATE`
+ni `DELETE`. La red de apoyo vive en un motor distinto porque su forma es distinta (§3, servicio
+de networking).
+
+```mermaid
+flowchart LR
+    subgraph pg [("Cloud SQL — una instancia PostgreSQL 16")]
+        direction TB
+        S_AUTH["schema auth<br/>usuarios · refresh_token"]
+        S_CORE["schema core<br/>student · program · enrollment<br/>course_grade · professor"]
+        S_LMS["schema lms<br/>course · submission · access_log"]
+        S_SUP["schema support<br/>wellbeing_entry · alert<br/>intervention_plan · outbox_event"]
+        S_NET["schema network<br/>(metadatos · outbox_event)"]
+        S_AUDIT[("schema audit<br/>audit_record<br/>INSERT/SELECT only — sin dueño")]
+    end
+    AUTH_SVC["auth-service"] -->|"rol confinado"| S_AUTH
+    CORE_SVC["core-service"] -->|"rol confinado"| S_CORE
+    LMS_SVC["lms-service"] -->|"rol confinado"| S_LMS
+    SUP_SVC["support-service"] -->|"rol confinado"| S_SUP
+    NET_SVC["network-service"] -->|"rol confinado"| S_NET
+    AUTH_SVC & CORE_SVC & LMS_SVC & SUP_SVC & NET_SVC -.->|"INSERT/SELECT"| S_AUDIT
+    NET_SVC ==>|"grafo SUPPORTS<br/>(1–10, por ambos lados)"| NEO[("Neo4j<br/>Person · Student —SUPPORTS→")]
 ```
 
 ## 4. Supuestos declarados
