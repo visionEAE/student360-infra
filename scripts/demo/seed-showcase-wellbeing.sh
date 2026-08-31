@@ -49,7 +49,7 @@ entry andres.ruiz@u.icesi.edu.co      GOOD      GOOD      GOOD
 
 echo
 echo "── verifying the advisor overview reflects the new emotional data ──"
-ctok="$(login carlos.mejia@icesi.edu.co)"
+ctok="$(DEMO_PASSWORD="${DEMO_STAFF_PASSWORD:-${DEMO_PASSWORD:-student360}}" login carlos.mejia@icesi.edu.co)"
 overview="$(curl -s -H "Authorization: Bearer $ctok" "$G/api/support/advisors/me/students")"
 echo "$overview" | python3 -c "
 import sys, json
