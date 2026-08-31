@@ -14,8 +14,12 @@ container="${NEO4J_CONTAINER:-student360-neo4j}"
 # NEO4J_URI set in the environment (an AuraDB neo4j+s://… address) targets the cloud instance
 # through a disposable cypher-shell container; otherwise the local compose instance as always.
 CLOUD_URI="${NEO4J_URI:-}"
+CLOUD_PASSWORD="${NEO4J_PASSWORD:-}"
 [ -f "$root/.env" ] && set -a && . "$root/.env" && set +a
+# The caller's environment wins over .env: targeting AuraDB must use AuraDB's credentials, not
+# the local compose password the file happens to declare.
 [ -n "$CLOUD_URI" ] && NEO4J_URI="$CLOUD_URI"
+[ -n "$CLOUD_PASSWORD" ] && NEO4J_PASSWORD="$CLOUD_PASSWORD"
 : "${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env (or the environment, for AuraDB)}"
 
 run_cypher() {
