@@ -8,7 +8,13 @@
 #   5  low wellbeing entry → pseudonymised + outbox 10  negative B: refresh replay → family revoked
 set -uo pipefail
 cd "$(dirname "$0")/../.."
+# The caller's environment wins over .env: running against the cloud means the tunnel port and
+# the Secret-Manager postgres password, not the local compose values the file declares.
+CALLER_PG_PASSWORD="${POSTGRES_PASSWORD:-}"
+CALLER_PG_PORT="${POSTGRES_PORT:-}"
 set -a; source .env; set +a
+[ -n "$CALLER_PG_PASSWORD" ] && POSTGRES_PASSWORD="$CALLER_PG_PASSWORD"
+[ -n "$CALLER_PG_PORT" ] && POSTGRES_PORT="$CALLER_PG_PORT"
 G="${GATEWAY_URL:-http://localhost:8080}"
 PSQL=(psql -h localhost -p "${POSTGRES_PORT:-5432}" -U postgres -d "${POSTGRES_DB:-student360}")
 export PGPASSWORD="$POSTGRES_PASSWORD"
