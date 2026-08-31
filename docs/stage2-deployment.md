@@ -84,6 +84,25 @@ The last proof of the pipeline itself: push a docs-only commit to a service — 
 via `paths-ignore`; push a code change — the hash gate builds; revert it — the gate finds the
 previous content tag already in the registry and **reuses the digest without building**.
 
+## Demo credentials in production
+
+The seeded accounts are the same as local, but their passwords are **not** `student360`: the
+production seed hashes values that live only in Secret Manager (fixed, human-typeable — chosen
+for demos, not secrecy). Read them when you need them; never commit them:
+
+```bash
+gcloud secrets versions access latest --secret=s360-prod-seed-student-password   # every STUDENT
+gcloud secrets versions access latest --secret=s360-prod-seed-staff-password     # ADVISOR + ADMIN
+```
+
+The demonstration scripts take them as environment variables:
+
+```bash
+DEMO_PASSWORD="$(gcloud secrets versions access latest --secret=s360-prod-seed-student-password)" \
+DEMO_STAFF_PASSWORD="$(gcloud secrets versions access latest --secret=s360-prod-seed-staff-password)" \
+GATEWAY_URL=… POSTGRES_PORT=15432 scripts/demo/run.sh
+```
+
 ## Costs (trial account)
 
 Same picture as [gcp-deployment-feasibility.md](gcp-deployment-feasibility.md): Cloud Run, Pub/Sub,
