@@ -431,8 +431,6 @@ antes de integrarlo.
 | Parte | Dónde |
 |---|---|
 | 1 · Diagrama + decisiones | Este documento (§3 diagrama, §4–5 decisiones y supuestos) |
-| 2 · Servicio + README | [`student360-core-service`](https://github.com/visionEAE/student360-core-service) (contrato en [`api-contract-v2.md`](api-contract-v2.md)) |
-| 3 y 4 · Escenarios | §7 de este documento |
 | Ejecución local | [`running-locally.md`](running-locally.md) — credenciales demo incluidas |
 | Despliegue GCP | [`stage2-deployment.md`](stage2-deployment.md) |
 | Visión pública del sistema | [OVERVIEW de la organización](https://github.com/visionEAE/.github/blob/main/docs/OVERVIEW.md) |
