@@ -13,7 +13,9 @@ G="${GATEWAY_URL:-http://localhost:8080}"
 PSQL=(psql -h localhost -p "${POSTGRES_PORT:-5432}" -U postgres -d "${POSTGRES_DB:-student360}")
 export PGPASSWORD="$POSTGRES_PASSWORD"
 failed=0; pass() { echo "  ✔ $1"; }; fail() { echo "  ✖ $1"; failed=1; }
-login() { curl -s -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"${DEMO_PASSWORD:-student360}\"}" "$G/api/auth/login"; }
+# Second argument overrides the password: production seeds students and staff with different
+# credentials (DEMO_PASSWORD / DEMO_STAFF_PASSWORD); locally both default to student360.
+login() { curl -s -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"${2:-${DEMO_PASSWORD:-student360}}\"}" "$G/api/auth/login"; }
 code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 stamp="$(date +%H%M%S)"
 
@@ -44,7 +46,7 @@ alert="$(jq -r '.alertId // empty' <<<"$entry")"
 "${PSQL[@]}" -tAc "SELECT 'pseudonym ' || left(student_pseudonym, 16) || '… (never the student id)' FROM support.wellbeing_entry ORDER BY recorded_at DESC LIMIT 1" | sed 's/^/     entry:  /'
 
 echo "── 7. assigned advisor (Carlos Mejía, A-2001) sees the alert and opens it"
-a="$(login carlos.mejia@icesi.edu.co)"; atok="$(jq -r .accessToken <<<"$a")"
+a="$(login carlos.mejia@icesi.edu.co "${DEMO_STAFF_PASSWORD:-${DEMO_PASSWORD:-student360}}")"; atok="$(jq -r .accessToken <<<"$a")"
 inbox="$(curl -s -H "Authorization: Bearer $atok" "$G/api/support/advisors/me/alerts")"
 jq -e --arg id "$alert" 'map(select(.id == $id)) | length == 1' <<<"$inbox" >/dev/null && pass "alert is in A-2001's inbox ($(jq length <<<"$inbox") alerts)" || fail "inbox: $(cut -c1-120 <<<"$inbox")"
 rid_detail="demo-$stamp-detail"
@@ -59,7 +61,7 @@ n="$("${PSQL[@]}" -tAc "SELECT count(DISTINCT service_name) FROM audit.audit_rec
 [ "$n" -ge 3 ] && pass "$n services wrote audit records for the same request id" || fail "only $n services in the trail"
 
 echo "── 9. negative A: Diana Pérez (A-2002, no active assignment to S-1003) opens the same alert"
-d="$(login diana.perez@icesi.edu.co)"; dtok="$(jq -r .accessToken <<<"$d")"; rid_denied="demo-$stamp-denied"
+d="$(login diana.perez@icesi.edu.co "${DEMO_STAFF_PASSWORD:-${DEMO_PASSWORD:-student360}}")"; dtok="$(jq -r .accessToken <<<"$d")"; rid_denied="demo-$stamp-denied"
 c="$(code -H "Authorization: Bearer $dtok" -H "X-Request-Id: $rid_denied" "$G/api/support/advisors/me/alerts/$alert")"
 [ "$c" = 403 ] && pass "→ 403" || fail "expected 403, got $c"
 "${PSQL[@]}" -tAc "SELECT action || ' ' || outcome || ' basis=' || authorization_basis FROM audit.audit_record WHERE request_id = '$rid_denied'" | sed 's/^/     audit: /'
