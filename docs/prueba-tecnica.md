@@ -208,7 +208,7 @@ de networking).
 
 ```mermaid
 flowchart LR
-    subgraph pg [("Cloud SQL — una instancia PostgreSQL 16")]
+    subgraph pg ["Cloud SQL — una instancia PostgreSQL 16"]
         direction TB
         S_AUTH["schema auth<br/>usuarios · refresh_token"]
         S_CORE["schema core<br/>student · program · enrollment<br/>course_grade · professor"]
